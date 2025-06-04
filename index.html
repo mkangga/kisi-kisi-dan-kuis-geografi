@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Materi & Kuis Geosfer Interaktif (Lengkap)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <!-- Chosen Palette: Cool Blues and Neutrals -->
+    <!-- Application Structure Plan: SPA dengan navigasi tab untuk Litosfer, Atmosfer, Hidrosfer. Setiap tab berisi sub-bagian materi sesuai permintaan. Di akhir setiap materi utama, ada tombol untuk memulai kuis 10 soal yang mencakup sub-topik terkait. Kuis ditampilkan dalam modal interaktif dengan feedback dan pembahasan. Struktur ini dipilih untuk fokus, kemudahan navigasi, dan pengalaman belajar terstruktur. Konten diperluas berdasarkan materi referensi. -->
+    <!-- Visualization & Content Choices: Materi disajikan dalam blok teks yang jelas. Diagram sederhana (lapisan Bumi/Atmosfer) dibuat dengan HTML/CSS. Kuis interaktif (radio button, tombol submit, feedback, pembahasan) adalah elemen interaktif utama. Pilihan ini mendukung tujuan pembelajaran dan pengujian pemahaman tanpa memerlukan grafik kompleks. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F0F4F8; /* Light Blue-Gray */
+            color: #1E293B; /* Slate 800 */
+        }
+        .tab-button {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            color: #475569; /* Slate 600 */
+        }
+        .tab-button.active {
+            border-bottom-color: #2563EB; /* Blue 600 */
+            color: #1E3A8A; /* Blue 800 */
+        }
+        .tab-button:hover {
+            background-color: #E2E8F0; /* Slate 200 */
+        }
+        .content-section {
+            display: none;
+            background-color: #FFFFFF;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+            margin-top: 1rem;
+        }
+        .content-section.active {
+            display: block;
+        }
+        .quiz-modal {
+            display: none; /* Hidden by default */
+            position: fixed;
+            z-index: 50;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.6);
+        }
+        .quiz-modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 25px;
+            border: 1px solid #888;
+            width: 90%;
+            max-width: 700px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .quiz-option {
+            display: block;
+            padding: 0.75rem;
+            margin: 0.5rem 0;
+            border: 1px solid #CBD5E1; /* Slate 300 */
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .quiz-option:hover {
+            background-color: #F1F5F9; /* Slate 100 */
+        }
+        .quiz-option.selected {
+            background-color: #BFDBFE; /* Blue 200 */
+            border-color: #3B82F6; /* Blue 500 */
+        }
+        .feedback-correct {
+            color: #16A34A; /* Green 600 */
+            font-weight: bold;
+            border: 1px solid #4ADE80; /* Green 400 */
+            background-color: #F0FDF4; /* Green 50 */
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+            margin-top: 0.5rem;
+        }
+        .feedback-incorrect {
+            color: #DC2626; /* Red 600 */
+            font-weight: bold;
+            border: 1px solid #F87171; /* Red 400 */
+            background-color: #FEF2F2; /* Red 50 */
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+            margin-top: 0.5rem;
+        }
+        .explanation {
+            margin-top: 0.75rem;
+            padding: 0.75rem;
+            background-color: #F8FAFC; /* Slate 50 */
+            border: 1px dashed #94A3B8; /* Slate 400 */
+            border-radius: 0.25rem;
+            font-size: 0.9rem;
+        }
+        .earth-layer-diagram {
+            width: 100%;
+            max-width: 250px;
+            margin: 1rem auto;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+        .earth-layer {
+            padding: 0.3rem;
+            color: white;
+            font-weight: 600;
+            border: 1px solid #4B5563; /* Gray 600 */
+        }
+        .earth-layer.crust { background-color: #A0522D; border-radius: 8px 8px 0 0; } /* Sienna */
+        .earth-layer.mantle { background-color: #FF8C00; } /* DarkOrange */
+        .earth-layer.outer-core { background-color: #FFD700; } /* Gold */
+        .earth-layer.inner-core { background-color: #F5F5DC; color: #333; border-radius: 0 0 8px 8px; } /* Beige */
+
+        .atmos-layer-diagram {
+            width: 100%;
+            max-width: 300px;
+            margin: 1rem auto;
+            font-size: 0.9rem;
+        }
+        .atmos-layer {
+            background-color: #E0F2FE; /* Sky 100 */
+            border: 1px solid #7DD3FC; /* Sky 300 */
+            padding: 0.5rem;
+            margin-bottom: 0.25rem;
+            border-radius: 0.25rem;
+            text-align: center;
+        }
+        .btn-primary {
+            background-color: #2563EB; /* Blue 600 */
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 0.375rem;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        .btn-primary:hover {
+            background-color: #1D4ED8; /* Blue 700 */
+        }
+        .btn-secondary {
+            background-color: #64748B; /* Slate 500 */
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 0.375rem;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        .btn-secondary:hover {
+            background-color: #475569; /* Slate 600 */
+        }
+        .analogy-box {
+            background-color: #FEFCE8; /* Yellow-50 */
+            border-left: 4px solid #FACC15; /* Yellow-400 */
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0.25rem;
+            font-style: italic;
+        }
+        h2 { margin-bottom: 0.75rem; font-size: 1.75rem; font-weight: 700; color: #1E3A8A; }
+        h3 { margin-top: 1.25rem; margin-bottom: 0.5rem; font-size: 1.25rem; font-weight: 600; color: #1D4ED8; }
+        h4 { margin-top: 1rem; margin-bottom: 0.25rem; font-size: 1.1rem; font-weight: 600; color: #1E40AF; } /* Blue 700 */
+        p, li { line-height: 1.6; margin-bottom: 0.5rem; }
+        ul { list-style-position: inside; padding-left: 0.5rem; }
+        ul ul { list-style-type: circle; margin-left: 1rem; }
+    </style>
+</head>
+<body>
+    <header class="bg-white shadow-md py-6">
+        <h1 class="text-3xl font-bold text-center text-blue-700">Geosfer Interaktif: Materi & Kuis (Lengkap)</h1>
+    </header>
+
+    <nav class="flex justify-center items-center bg-white shadow-sm sticky top-0 z-40">
+        <button class="tab-button active" onclick="showSection('litosfer', this)">Litosfer</button>
+        <button class="tab-button" onclick="showSection('atmosfer', this)">Atmosfer</button>
+        <button class="tab-button" onclick="showSection('hidrosfer', this)">Hidrosfer</button>
+    </nav>
+
+    <main class="container mx-auto p-4 max-w-4xl">
+        <!-- LITOSFER -->
+        <section id="litosfer" class="content-section active">
+            <h2>Litosfer: Lapisan Batuan Bumi</h2>
+            <p>Litosfer berasal dari kata Yunani "lithos" (batu) dan "sphaira" (lapisan). Ini adalah lapisan kerak Bumi paling luar yang tersusun atas batuan dan mineral, bersifat padat dan kaku. Litosfer tidak hanya daratan, tapi juga mencakup dasar samudra.</p>
+            <div class="analogy-box">
+                <p><strong>Analogi Kulit Apel:</strong> Bayangkan Bumi itu apel raksasa. Litosfer itu kulitnya, tipis tapi vital, melindungi isi apel dan jadi tempat kita berpijak.</p>
+            </div>
+
+            <h3>Struktur Lapisan Bumi</h3>
+            <p>Bumi kita memiliki struktur berlapis-lapis seperti bawang:</p>
+            <div class="earth-layer-diagram">
+                <div class="earth-layer crust">Kerak Bumi (Crust) - 5-70 km</div>
+                <div class="earth-layer mantle">Mantel/Selubung Bumi (Mantle) - hingga 2900 km</div>
+                <div class="earth-layer outer-core">Inti Luar (Outer Core) - cair, hingga 5150 km</div>
+                <div class="earth-layer inner-core">Inti Dalam (Inner Core) - padat, hingga 6371 km</div>
+            </div>
+            <p>Kerak Bumi sendiri dibagi menjadi dua jenis utama berdasarkan komposisi kimianya:</p>
+            <ul>
+                <li><strong>Lapisan SIAL (Silisium & Aluminium):</strong> Lebih ringan dan tebal (30-70 km), membentuk daratan benua-benua. Dominan batuan granit.</li>
+                <li><strong>Lapisan SIMA (Silisium & Magnesium):</strong> Lebih berat dan tipis (5-10 km), biasanya membentuk dasar samudra. Dominan batuan basal.</li>
+            </ul>
+            <p>Litosfer juga mencakup bagian atas dari mantel Bumi yang bersifat padat dan kaku, bersama-sama dengan kerak Bumi membentuk lempeng-lempeng tektonik.</p>
+
+            <h3>Siklus Batuan: Perjalanan Ajaib Para Batu</h3>
+            <p>Batuan di Bumi terus berubah bentuk dalam siklus batuan. Proses ini melibatkan perubahan dari satu jenis batuan ke jenis lainnya melalui berbagai proses geologi.</p>
+             <div class="analogy-box">
+                <p><strong>Analogi Metamorfosis Kupu-kupu atau Resep Masakan:</strong> Magma (telur/bahan dasar) ➔ Batuan Beku (ulat/hasil pendinginan) ➔ Sedimen (hancuran) ➔ Batuan Sedimen (kepompong/hasil pemadatan) ➔ Batuan Metamorf (kupu-kupu/hasil "dimasak" ulang). Semua bisa kembali jadi magma!</p>
+            </div>
+            <ul>
+                <li><strong>Magma:</strong> Batuan cair pijar dari dalam perut Bumi.</li>
+                <li><strong>Batuan Beku:</strong> Terbentuk dari magma yang mendingin dan membeku.
+                    <ul>
+                        <li><em>Batuan Beku Dalam (Intrusif/Plutonik):</em> Membeku perlahan di dalam Bumi, kristal besar (Contoh: Granit).</li>
+                        <li><em>Batuan Beku Luar (Ekstrusif/Vulkanik):</em> Membeku cepat di permukaan, kristal kecil atau tidak berkristal (Contoh: Basal, Batu Apung).</li>
+                    </ul>
+                </li>
+                <li><strong>Batuan Sedimen:</strong> Terbentuk dari pengendapan dan pemadatan serpihan batuan lain (sedimen), sisa organisme, atau pengendapan kimia. (Contoh: Batu Pasir, Batu Gamping, Batu Bara).</li>
+                <li><strong>Batuan Metamorf (Malihan):</strong> Terbentuk ketika batuan beku atau sedimen mengalami perubahan akibat suhu dan tekanan tinggi di dalam Bumi, tanpa meleleh. (Contoh: Marmer dari batu gamping, Sabak dari serpih).</li>
+            </ul>
+
+
+            <h3>Tenaga Endogen: Pembentuk Muka Bumi dari Dalam</h3>
+            <p>Tenaga endogen adalah tenaga yang berasal dari dalam Bumi dan bersifat membangun atau mengubah bentuk permukaan Bumi. Bayangkan seperti ada kompor raksasa di dalam Bumi!</p>
+            <h4>1. Tektonisme: Puzzle Raksasa Bumi yang Bergerak</h4>
+            <p>Litosfer pecah menjadi lempeng-lempeng tektonik yang terus bergerak. Pergerakan ini bisa saling dorong (konvergen), menjauh (divergen), atau bergesekan (transform).</p>
+            <ul>
+                <li><strong>Gerak Epirogenetik:</strong> Gerak naik turunnya daratan secara lambat dan luas.</li>
+                <li><strong>Gerak Orogenetik:</strong> Gerakan lebih cepat, membentuk pegunungan, lipatan (antiklin & sinklin), dan patahan/sesar (horst & graben).
+                    <ul>
+                        <li><em>Lipatan:</em> Terjadi jika batuan lentur. Bagian puncak disebut antiklin, lembah disebut sinklin. Contoh: Pegunungan Bukit Barisan. Analogi: Karpet tebal didorong.</li>
+                        <li><em>Patahan (Sesar):</em> Terjadi jika batuan keras dan getas. Blok batuan naik disebut horst, yang turun disebut graben. Contoh: Patahan Semangko. Analogi: Biskuit dipatahkan.</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <h4>2. Vulkanisme: Ketika Gunung Berapi "Batuk"</h4>
+            <p>Vulkanisme adalah semua peristiwa yang berhubungan dengan magma yang keluar mencapai permukaan Bumi. Magma adalah batuan cair pijar. Jika sudah keluar ke permukaan disebut lava.</p>
+            <div class="analogy-box">
+                <p><strong>Analogi Botol Soda Dikocok:</strong> Jika tutupnya dibuka, isinya (magma, lava, abu, gas) akan menyembur keluar.</p>
+            </div>
+            <ul>
+                <li><strong>Intrusi Magma:</strong> Aktivitas magma yang tidak sampai ke permukaan Bumi, membeku di dalam. Bentukannya: batolit (dapur magma besar), lakolit (menyusup di antara lapisan batuan, cembung ke atas), sill (menyusup sejajar lapisan batuan), diatrema (pipa kawah).</li>
+                <li><strong>Ekstrusi Magma (Erupsi):</strong> Magma yang keluar sampai ke permukaan Bumi. Material yang dikeluarkan:
+                    <ul>
+                        <li><em>Padat (Piroklastik/Eflata):</em> Bom (bongkahan besar), lapili (kerikil), pasir vulkanik, abu vulkanik.</li>
+                        <li><em>Cair:</em> Lava (magma yang mengalir di permukaan), lahar (campuran lava dengan air/lumpur).</li>
+                        <li><em>Gas (Ekshalasi):</em> Solfatar (gas belerang), fumarol (uap air), mofet (gas karbon dioksida).</li>
+                    </ul>
+                </li>
+                <li><strong>Tipe Letusan Gunung Api:</strong>
+                    <ul>
+                        <li><em>Hawaiian:</em> Lelehan lava encer, tenang.</li>
+                        <li><em>Strombolian:</em> Letupan kecil periodik, mengeluarkan material padat.</li>
+                        <li><em>Vulkanian:</em> Letupan kuat, abu membumbung tinggi.</li>
+                        <li><em>Merapi:</em> Guguran kubah lava disertai awan panas (wedhus gembel).</li>
+                        <li><em>Pelean:</em> Letusan sangat dahsyat dengan awan panas yang sangat besar dan merusak.</li>
+                        <li><em>Perret/Plinian:</em> Sangat eksplosif, kolom abu sangat tinggi, bisa mempengaruhi iklim global. Contoh: Krakatau 1883, Tambora 1815.</li>
+                    </ul>
+                </li>
+            </ul>
+            <h4>3. Seisme (Gempa Bumi): Saat Bumi "Menggigil"</h4>
+            <p>Seisme adalah getaran yang terjadi di permukaan Bumi akibat pelepasan energi dari dalam secara tiba-tiba. Indonesia rawan gempa karena terletak di pertemuan tiga lempeng tektonik besar.</p>
+            <ul>
+                <li><strong>Berdasarkan Penyebab:</strong>
+                    <ul>
+                        <li><em>Gempa Tektonik:</em> Akibat pergerakan lempeng tektonik. Paling umum dan merusak.</li>
+                        <li><em>Gempa Vulkanik:</em> Akibat aktivitas gunung api (pergerakan magma).</li>
+                        <li><em>Gempa Runtuhan/Terban:</em> Akibat runtuhnya gua atau terowongan tambang. Lokal dan kekuatannya kecil.</li>
+                    </ul>
+                </li>
+                <li><strong>Istilah Penting:</strong>
+                    <ul>
+                        <li><em>Hiposentrum:</em> Pusat gempa di dalam Bumi.</li>
+                        <li><em>Episentrum:</em> Titik di permukaan Bumi tepat di atas hiposentrum.</li>
+                        <li><em>Magnitudo:</em> Ukuran kekuatan gempa di sumbernya (misal Skala Richter).</li>
+                        <li><em>Intensitas:</em> Ukuran kerusakan akibat gempa di suatu tempat (misal Skala MMI - Modified Mercalli Intensity).</li>
+                        <li><em>Gelombang Seismik:</em> Gelombang Primer (P), Gelombang Sekunder (S), Gelombang Permukaan (L).</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <h3>Tenaga Eksogen: Ukiran Alam dari Luar</h3>
+            <p>Tenaga eksogen adalah tenaga yang berasal dari luar Bumi dan bersifat merombak atau mengubah bentuk permukaan Bumi. Sumbernya: air, angin, sinar matahari, perubahan suhu, makhluk hidup.</p>
+            <div class="analogy-box">
+                <p><strong>Analogi Amplas atau Pahat Alam:</strong> Tenaga eksogen menghaluskan (erosi) atau melarutkan batuan (pelapukan kimiawi).</p>
+            </div>
+            <h4>1. Pelapukan (Weathering)</h4>
+            <p>Pelapukan adalah proses penghancuran massa batuan menjadi bagian-bagian yang lebih kecil atau larut.</p>
+            <ul>
+                <li><strong>Pelapukan Mekanik/Fisik:</strong> Tanpa mengubah komposisi kimia. Penyebab: perubahan suhu drastis (insolasi), pembekuan air di celah batuan (frost wedging), pengkristalan garam, kegiatan organisme (akar tanaman).</li>
+                <li><strong>Pelapukan Kimiawi:</strong> Disertai perubahan komposisi kimia. Penyebab: hidrolisis (reaksi dengan air), oksidasi (reaksi dengan oksigen, misal karat), karbonasi (reaksi dengan asam karbonat dari CO2 dan air, misal pelarutan batu kapur membentuk gua dan stalaktit/stalagmit).</li>
+                <li><strong>Pelapukan Organik/Biologis:</strong> Oleh aktivitas makhluk hidup. Contoh: akar tanaman memecah batu, lumut mengeluarkan zat kimia, kotoran hewan.</li>
+            </ul>
+            <h4>2. Erosi (Pengikisan)</h4>
+            <p>Erosi adalah proses pengikisan dan pengangkutan material hasil pelapukan.</p>
+            <ul>
+                <li><strong>Ablasi:</strong> Erosi oleh air mengalir (sungai). Membentuk lembah V, meander, delta (jika dikombinasikan dengan sedimentasi).</li>
+                <li><strong>Abrasi:</strong> Erosi oleh gelombang air laut. Membentuk tebing curam (cliff), gua pantai, tanjung, teluk.</li>
+                <li><strong>Eksarasi:</strong> Erosi oleh es/gletser. Membentuk lembah U (U-shaped valley), fyord, moraine.</li>
+                <li><strong>Deflasi/Korasi:</strong> Erosi oleh angin. Deflasi (mengangkut material halus), Korasi (mengikis batuan dengan material yang dibawa angin). Membentuk batu jamur (mushroom rock), gumuk pasir (sand dunes).</li>
+            </ul>
+            <h4>3. Mass Wasting (Gerakan Massa Tanah)</h4>
+            <p>Perpindahan massa batuan atau tanah menuruni lereng karena pengaruh gaya gravitasi. Contoh: tanah longsor, rayapan tanah (creep), aliran lumpur.</p>
+            <h4>4. Sedimentasi (Pengendapan)</h4>
+            <p>Proses pengendapan material hasil erosi yang terbawa oleh air, angin, atau es ketika tenaga pengangkutnya melemah. Contoh: delta di muara sungai, gumuk pasir, endapan di dasar danau/laut.</p>
+
+            <h3>Fenomena Litosfer di Indonesia</h3>
+            <p>Indonesia, terletak di Cincin Api Pasifik, adalah "laboratorium" litosfer. Banyak gunung api, sering gempa, dan bentang alamnya beragam. Ini membawa tantangan (bencana) sekaligus berkah (tanah subur, mineral, keindahan alam).</p>
+
+            <div class="text-center mt-8">
+                <button class="btn-primary" onclick="startQuiz('litosfer')">Mulai Kuis Litosfer</button>
+            </div>
+        </section>
+
+        <!-- ATMOSFER -->
+        <section id="atmosfer" class="content-section">
+            <h2>Atmosfer: Selimut Gas Pelindung Bumi</h2>
+            <p>Atmosfer adalah lapisan gas yang menyelimuti Bumi, melindungi kehidupan dengan menyerap radiasi UV, menghangatkan permukaan (efek rumah kaca), dan mengurangi perbedaan suhu ekstrem. Komposisi utama: <strong>Nitrogen (78%)</strong>, <strong>Oksigen (21%)</strong>, sisanya Argon, Karbon Dioksida (CO2), uap air, dll.</p>
+            <div class="analogy-box">
+                <p><strong>Analogi Jaket Super Canggih atau Selimut Berlapis:</strong> Melindungi dari panas, menjaga kehangatan, tameng meteor, dan memberi oksigen.</p>
+            </div>
+
+            <h3>Lapisan-Lapisan Atmosfer</h3>
+            <p>Atmosfer Bumi terdiri dari beberapa lapisan berdasarkan profil suhunya:</p>
+            <div class="atmos-layer-diagram">
+                <div class="atmos-layer"><strong>Eksosfer (> 500-1000 km):</strong> Lapisan terluar, batas dengan luar angkasa. Udara sangat tipis, partikel gas bisa lepas ke angkasa. Tempat orbit satelit.</div>
+                <div class="atmos-layer"><strong>Termosfer/Ionosfer (80/85 - 500/1000 km):</strong> Suhu meningkat dengan ketinggian (bisa >1000°C karena radiasi UV & X). Tempat terjadinya aurora. Lapisan ionosfer (lapisan D, E, F) memantulkan gelombang radio, penting untuk komunikasi.</div>
+                <div class="atmos-layer"><strong>Mesosfer (50 - 80/85 km):</strong> Suhu menurun drastis dengan ketinggian (bisa -90°C, terdingin). Tempat meteor terbakar habis karena gesekan. Terdapat awan noktilusen (noctilucent clouds).</div>
+                <div class="atmos-layer"><strong>Stratosfer (10/15 - 50 km):</strong> Suhu umumnya meningkat dengan ketinggian karena penyerapan radiasi UV oleh lapisan ozon (O3). Lapisan ozon terkonsentrasi di ketinggian 20-35 km. Tempat terbang pesawat jet.</div>
+                <div class="atmos-layer"><strong>Troposfer (0 - 10/15 km):</strong> Lapisan terbawah, ketebalan bervariasi (lebih tebal di ekuator). Tempat terjadinya 80% massa atmosfer dan sebagian besar fenomena cuaca. Suhu menurun dengan ketinggian (gradien termal rata-rata 0,65°C per 100 m). Batas atasnya disebut tropopause.</div>
+            </div>
+
+            <h3>Unsur Cuaca dan Iklim Beserta Alat Ukurnya</h3>
+            <p>Cuaca adalah keadaan atmosfer sesaat, iklim adalah rata-rata cuaca jangka panjang.</p>
+            <div class="analogy-box">
+                <p><strong>Analogi Mood vs. Karakter:</strong> Cuaca itu *mood* harian (berubah-ubah), iklim itu karakter (stabil).</p>
+            </div>
+            <ul>
+                <li><strong>Penyinaran Matahari:</strong> Sumber energi utama. Intensitas dipengaruhi sudut datang sinar, lama penyinaran, kondisi awan.</li>
+                <li><strong>Suhu Udara:</strong> Derajat panas/dingin udara. Dipengaruhi penyinaran matahari. Alat ukur: <strong>Termometer</strong> (Celcius, Fahrenheit, Kelvin, Reamur). Termograf untuk mencatat suhu secara kontinu.</li>
+                <li><strong>Tekanan Udara:</strong> Berat kolom udara. Dipengaruhi suhu (udara panas lebih ringan, tekanan rendah) dan ketinggian (makin tinggi, tekanan makin rendah). Alat ukur: <strong>Barometer</strong> (raksa, aneroid). Barograf untuk mencatat tekanan secara kontinu. Satuan: milibar (mb) atau HectoPascal (hPa).</li>
+                <li><strong>Angin:</strong> Gerakan udara dari tekanan tinggi ke rendah. Kecepatan dipengaruhi gradien barometrik (perbedaan tekanan). Arah dipengaruhi hukum Buys Ballot dan gaya Coriolis. Alat ukur kecepatan: <strong>Anemometer</strong>. Alat ukur arah: <strong>Wind vane (penunjuk arah angin)</strong>.</li>
+                <li><strong>Kelembapan Udara:</strong> Kandungan uap air dalam udara.
+                    <ul>
+                        <li><em>Kelembapan Absolut/Mutlak:</em> Massa uap air (gram) per volume udara (m³).</li>
+                        <li><em>Kelembapan Relatif/Nisbi:</em> Perbandingan jumlah uap air aktual dengan kapasitas maksimum udara menampung uap air pada suhu tertentu (%).</li>
+                    </ul>
+                    Alat ukur: <strong>Higrometer</strong> (rambut, digital), <strong>Psikrometer</strong> (bola basah & bola kering).
+                </li>
+                <li><strong>Awan:</strong> Kumpulan titik air atau kristal es hasil kondensasi. Klasifikasi berdasarkan bentuk (Cumulus, Stratus, Cirrus) dan ketinggian (awan tinggi, sedang, rendah, dengan perkembangan vertikal seperti Cumulonimbus penyebab badai).</li>
+                <li><strong>Curah Hujan:</strong> Jumlah air yang jatuh. Alat ukur: <strong>Penakar Hujan (Ombrometer/Pluviometer)</strong>. Dinyatakan dalam mm.</li>
+            </ul>
+
+            <h3>Klasifikasi Iklim Menurut Schmidt-Ferguson</h3>
+            <p>Metode ini cocok untuk daerah tropis, berdasarkan perbandingan jumlah bulan kering (BK: CH < 60 mm) dan bulan basah (BB: CH > 100 mm) selama minimal 10 tahun data.</p>
+            <p class="font-mono text-center my-2 p-2 bg-gray-100 rounded">Q = (Rata-rata Jumlah Bulan Kering / Rata-rata Jumlah Bulan Basah) x 100%</p>
+            <table class="min-w-full text-sm my-2 border border-collapse">
+                <thead><tr class="bg-gray-100"><th class="border p-1">Tipe Iklim</th><th class="border p-1">Nilai Q (%)</th><th class="border p-1">Keterangan Vegetasi</th></tr></thead>
+                <tbody>
+                    <tr><td class="border p-1 text-center">A</td><td class="border p-1 text-center">0 - 14.3</td><td class="border p-1">Sangat Basah (Hutan Hujan Tropis)</td></tr>
+                    <tr><td class="border p-1 text-center">B</td><td class="border p-1 text-center">14.3 - 33.3</td><td class="border p-1">Basah (Hutan Hujan Tropis)</td></tr>
+                    <tr><td class="border p-1 text-center">C</td><td class="border p-1 text-center">33.3 - 60.0</td><td class="border p-1">Agak Basah (Hutan Musim/Daerah Peralihan)</td></tr>
+                    <tr><td class="border p-1 text-center">D</td><td class="border p-1 text-center">60.0 - 100.0</td><td class="border p-1">Sedang (Hutan Musim/Sabana)</td></tr>
+                    <tr><td class="border p-1 text-center">E</td><td class="border p-1 text-center">100.0 - 167.0</td><td class="border p-1">Agak Kering (Sabana)</td></tr>
+                    <tr><td class="border p-1 text-center">F</td><td class="border p-1 text-center">167.0 - 300.0</td><td class="border p-1">Kering (Stepa/Padang Rumput)</td></tr>
+                    <tr><td class="border p-1 text-center">G</td><td class="border p-1 text-center">300.0 - 700.0</td><td class="border p-1">Sangat Kering (Stepa Kering)</td></tr>
+                    <tr><td class="border p-1 text-center">H</td><td class="border p-1 text-center">> 700.0</td><td class="border p-1">Ekstrem Kering (Gurun)</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Iklim Matahari (Iklim Astronomis)</h3>
+            <p>Pembagian iklim berdasarkan garis lintang dan banyaknya sinar matahari yang diterima.</p>
+            <ul>
+                <li><strong>Daerah Iklim Tropis:</strong> 0° – 23,5° LU/LS. Suhu tinggi (rata-rata >18°C), amplitudo suhu harian lebih besar dari tahunan, curah hujan tinggi. Matahari selalu berada di atas cakrawala (siang > malam atau sama).</li>
+                <li><strong>Daerah Iklim Subtropis:</strong> 23,5° – 40° LU/LS. Mengalami empat musim (panas, gugur, dingin, semi), tetapi musim dingin tidak terlalu ekstrem. Amplitudo suhu tahunan mulai jelas.</li>
+                <li><strong>Daerah Iklim Sedang:</strong> 40° – 66,5° LU/LS. Mengalami empat musim yang jelas perbedaannya. Amplitudo suhu tahunan besar.</li>
+                <li><strong>Daerah Iklim Dingin (Kutub):</strong> 66,5° – 90° LU/LS. Suhu sangat rendah, selalu di bawah 10°C bahkan di musim panas. Tertutup salju dan es abadi. Mengalami fenomena malam kutub dan siang kutub.</li>
+            </ul>
+             <h4>Fenomena Atmosfer Sehari-hari</h4>
+            <ul>
+                <li><strong>Pelangi:</strong> Pembiasan dan pemantulan cahaya matahari oleh titik-titik air hujan.</li>
+                <li><strong>Angin Darat & Angin Laut:</strong> Akibat perbedaan pemanasan daratan dan lautan. Siang: angin laut (ke darat). Malam: angin darat (ke laut).</li>
+                <li><strong>Mengapa Puncak dingin, Jakarta panas?</strong> Ketinggian mempengaruhi kepadatan dan kemampuan udara menyimpan panas. Udara tipis di Puncak sulit menyimpan panas. Sumber panas utama atmosfer adalah pantulan dari permukaan Bumi.</li>
+                <li><strong>Musim di Indonesia:</strong> Dipengaruhi Angin Muson. Muson Barat (Oktober-April) dari Asia bawa uap air ➔ Musim Hujan. Muson Timur (April-Oktober) dari Australia (kering) ➔ Musim Kemarau.</li>
+            </ul>
+            <div class="text-center mt-8">
+                <button class="btn-primary" onclick="startQuiz('atmosfer')">Mulai Kuis Atmosfer</button>
+            </div>
+        </section>
+
+        <!-- HIDROSFER -->
+        <section id="hidrosfer" class="content-section">
+            <h2>Hidrosfer: Dunia Air di Bumi</h2>
+            <p>Hidrosfer ("hydro" = air) mencakup semua bentuk air di Bumi (cair, padat, gas). Sekitar 71% permukaan Bumi tertutup air. Ini seperti sistem peredaran air raksasa planet kita.</p>
+
+            <h3>Siklus Air (Siklus Hidrologi)</h3>
+            <p>Siklus air adalah pergerakan air yang terus-menerus di, atas, dan di bawah permukaan Bumi, dengan perubahan wujud.</p>
+            <div class="analogy-box">
+                <p><strong>Analogi Turis Keliling Dunia:</strong> Air terus bergerak dan berubah "penampilan" (wujud) dalam perjalanannya.</p>
+            </div>
+            <div class="my-4 p-4 border border-blue-300 rounded-lg bg-blue-50">
+                <p class="text-center font-semibold text-blue-700 text-lg mb-3">Tahapan Utama Siklus Air:</p>
+                <ol class="list-decimal space-y-2">
+                    <li><strong>Evaporasi:</strong> Penguapan air dari permukaan perairan (laut, danau, sungai) menjadi uap air karena panas matahari. Analogi: Jemuran basah jadi kering.</li>
+                    <li><strong>Transpirasi:</strong> Penguapan air dari jaringan tumbuhan (terutama stomata daun) ke atmosfer. Analogi: Tumbuhan "berkeringat".</li>
+                    <li><strong>Evapotranspirasi:</strong> Gabungan evaporasi dan transpirasi. Total kehilangan air dari permukaan tanah dan vegetasi ke atmosfer.</li>
+                    <li><strong>Sublimasi:</strong> Perubahan es atau salju (padat) langsung menjadi uap air (gas) tanpa melalui fase cair. Terjadi di daerah dingin/ketinggian.</li>
+                    <li><strong>Kondensasi:</strong> Perubahan uap air di atmosfer menjadi partikel es atau titik-titik air kecil karena pendinginan (mencapai titik embun), membentuk awan. Analogi: Embun di gelas es.</li>
+                    <li><strong>Adveksi:</strong> Pergerakan awan atau massa uap air secara horizontal dari satu tempat ke tempat lain oleh angin.</li>
+                    <li><strong>Presipitasi:</strong> Jatuhnya segala bentuk air (cair atau padat) dari atmosfer ke permukaan Bumi. Contoh: hujan, salju, hujan es (hail), gerimis (drizzle), virga (hujan tak sampai tanah).</li>
+                    <li><strong>Run-off (Limpasan Permukaan):</strong> Pergerakan air di atas permukaan tanah (misalnya dalam bentuk aliran sungai, overland flow) menuju ke tempat yang lebih rendah.</li>
+                    <li><strong>Infiltrasi:</strong> Proses meresapnya air dari permukaan tanah ke dalam lapisan tanah atas (zona tak jenuh).</li>
+                    <li><strong>Perkolasi:</strong> Pergerakan air di dalam lapisan tanah dan batuan (dari zona tak jenuh ke zona jenuh/akuifer) secara vertikal atau lateral.</li>
+                    <li><strong>Intersepsi:</strong> Air hujan yang tertahan sementara oleh vegetasi (daun, batang) sebelum mencapai tanah atau menguap kembali.</li>
+                </ol>
+            </div>
+            <p>Siklus air dapat dibedakan menjadi tiga jenis berdasarkan panjang lintasannya:</p>
+            <ul>
+                <li><strong>Siklus Pendek:</strong> Air laut menguap ➔ kondensasi membentuk awan di atas laut ➔ hujan jatuh kembali ke laut.</li>
+                <li><strong>Siklus Sedang:</strong> Air laut menguap ➔ uap air terbawa angin ke daratan (adveksi) ➔ kondensasi membentuk awan ➔ hujan jatuh di daratan ➔ sebagian meresap (infiltrasi), sebagian mengalir di permukaan (run-off) kembali ke laut melalui sungai. Paling umum terjadi.</li>
+                <li><strong>Siklus Panjang:</strong> Air laut menguap ➔ uap air terbawa angin ke daratan yang tinggi/dingin ➔ kondensasi membentuk awan ➔ presipitasi dalam bentuk salju/es ➔ membentuk gletser ➔ gletser mencair ➔ air mengalir ke sungai ➔ kembali ke laut.</li>
+            </ul>
+            <h4>Jenis-Jenis Perairan di Indonesia dan Manfaatnya</h4>
+            <ul>
+                <li><strong>Air Permukaan:</strong>
+                    <ul>
+                        <li><em>Sungai:</em> Aliran air tawar dari hulu ke hilir. Manfaat: air baku, irigasi, transportasi, PLTA, habitat ikan.</li>
+                        <li><em>Danau/Waduk:</em> Cekungan air. Manfaat: air baku, irigasi, budidaya ikan, wisata, pengendali banjir, PLTA.</li>
+                    </ul>
+                </li>
+                <li><strong>Air Tanah:</strong> Tersimpan di bawah permukaan, lebih bersih. Manfaat: air minum (sumur), irigasi. Jenis: air tanah freatik (dangkal), air tanah artesis (tertekan di antara lapisan kedap air).</li>
+                <li><strong>Laut:</strong> Air asin terluas. Manfaat: garam, transportasi, sumber ikan, wisata, potensi energi.</li>
+                <li><strong>Rawa:</strong> Dataran rendah tergenang. Manfaat: habitat khas, hutan bakau penahan abrasi.</li>
+            </ul>
+            <h4>Konservasi Air</h4>
+            <p>Air bersih terbatas, penting untuk dihemat. Caranya: matikan keran, perbaiki bocor, gunakan air bekas cucian untuk menyiram, tampung air hujan, buat biopori, tanam pohon.</p>
+            <div class="text-center mt-8">
+                <button class="btn-primary" onclick="startQuiz('hidrosfer')">Mulai Kuis Hidrosfer</button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Quiz Modal -->
+    <div id="quizModal" class="quiz-modal">
+        <div class="quiz-modal-content">
+            <h2 id="quizTitle" class="text-2xl font-bold mb-4 text-center">Kuis</h2>
+            <div id="quizQuestion" class="text-lg mb-4"></div>
+            <div id="quizOptions" class="mb-4"></div>
+            <div id="quizFeedback" class="mb-4"></div>
+            <div id="quizExplanation" class="explanation hidden"></div>
+            <div class="flex justify-between items-center mt-6">
+                <button id="submitAnswer" class="btn-primary" onclick="submitAnswer()">Jawab</button>
+                <button id="nextQuestion" class="btn-secondary hidden" onclick="nextQuestion()">Lanjut</button>
+            </div>
+            <div id="quizScore" class="text-center mt-4 font-semibold"></div>
+            <button id="closeQuiz" class="btn-secondary mt-4 w-full" onclick="closeQuizModal()">Tutup Kuis</button>
+        </div>
+    </div>
+
+    <footer class="text-center py-8 mt-12 bg-gray-800 text-white text-sm">
+        <p>&copy; 2024 Pembelajaran Geosfer Interaktif. Dibuat untuk tujuan edukasi.</p>
+    </footer>
+
+    <script>
+        const quizData = {
+            litosfer: [
+                { question: "Lapisan inti dalam Bumi bersifat...", options: ["Cair", "Padat", "Gas", "Semi-padat"], correctAnswer: 1, explanation: "Inti dalam Bumi (inner core) bersifat padat karena tekanan yang sangat tinggi, meskipun suhunya juga sangat tinggi." },
+                { question: "Batuan beku yang terbentuk dari magma yang mendingin dan membeku di dalam kerak Bumi disebut batuan beku...", options: ["Luar (Ekstrusif)", "Korok (Gang)", "Dalam (Intrusif/Plutonik)", "Sela (Sill)"], correctAnswer: 2, explanation: "Batuan beku dalam atau intrusif (plutonik) terbentuk ketika magma mendingin perlahan di bawah permukaan Bumi, menghasilkan kristal yang lebih besar. Contoh: granit." },
+                { question: "Peristiwa keluarnya magma hingga ke permukaan Bumi disebut...", options: ["Intrusi magma", "Diatrema", "Ekstrusi magma (Erupsi)", "Batolit"], correctAnswer: 2, explanation: "Ekstrusi magma atau erupsi adalah proses keluarnya magma dari dalam Bumi ke permukaan, bisa berupa lelehan lava atau letusan eksplosif." },
+                { question: "Pusat gempa yang terletak di dalam lapisan Bumi disebut...", options: ["Episentrum", "Hiposentrum", "Isoseista", "Pleistoseista"], correctAnswer: 1, explanation: "Hiposentrum adalah titik di dalam Bumi tempat sumber gempa berasal. Episentrum adalah titik di permukaan Bumi tepat di atas hiposentrum." },
+                { question: "Gempa yang disebabkan oleh aktivitas pergerakan lempeng tektonik disebut gempa...", options: ["Vulkanik", "Runtuhan", "Buatan", "Tektonik"], correctAnswer: 3, explanation: "Gempa tektonik adalah jenis gempa yang paling umum dan seringkali paling merusak, disebabkan oleh pelepasan energi akibat pergeseran lempeng tektonik." },
+                { question: "Pelapukan batuan yang disebabkan oleh perubahan suhu ekstrem (panas-dingin) secara berulang adalah contoh pelapukan...", options: ["Kimiawi", "Organik", "Mekanik/Fisik", "Biologis"], correctAnswer: 2, explanation: "Pelapukan mekanik atau fisik adalah proses penghancuran batuan tanpa mengubah komposisi kimianya. Perubahan suhu menyebabkan batuan memuai dan menyusut, yang lama kelamaan dapat memecahkannya." },
+                { question: "Proses pelarutan batu kapur oleh air hujan yang mengandung CO2 adalah contoh pelapukan...", options: ["Mekanik", "Kimiawi (Karbonasi)", "Organik", "Fisik"], correctAnswer: 1, explanation: "Pelapukan kimiawi melalui proses karbonasi terjadi ketika air hujan (yang bersifat asam lemah karena larutnya CO2) bereaksi dengan batu kapur (kalsium karbonat), melarutkannya dan membentuk bentang alam karst." },
+                { question: "Pengikisan batuan atau tanah yang disebabkan oleh tenaga air mengalir seperti sungai disebut...", options: ["Abrasi", "Deflasi", "Eksarasi", "Ablasi"], correctAnswer: 3, explanation: "Ablasi adalah erosi yang disebabkan oleh air mengalir. Abrasi oleh gelombang laut, deflasi oleh angin, dan eksarasi oleh gletser." },
+                { question: "Bentang alam berupa tebing curam di pantai yang terbentuk akibat erosi oleh gelombang laut disebut...", options: ["Delta", "Meander", "Cliff", "Tombolo"], correctAnswer: 2, explanation: "Cliff (tebing pantai) adalah hasil dari proses abrasi, yaitu pengikisan pantai oleh energi gelombang laut secara terus-menerus." },
+                { question: "Lapisan kerak benua didominasi oleh batuan jenis granit dan sering disebut lapisan...", options: ["Sima (Silisium Magnesium)", "Astenosfer", "Sial (Silisium Aluminium)", "Barisfer"], correctAnswer: 2, explanation: "Lapisan Sial (Silisium Aluminium) merupakan penyusun utama kerak benua, bersifat lebih ringan dan tebal dibandingkan lapisan Sima." }
+            ],
+            atmosfer: [
+                { question: "Lapisan atmosfer tempat terjadinya sebagian besar fenomena cuaca seperti awan dan hujan adalah...", options: ["Stratosfer", "Mesosfer", "Troposfer", "Termosfer"], correctAnswer: 2, explanation: "Troposfer adalah lapisan atmosfer terbawah, paling dekat dengan permukaan Bumi, di mana semua aktivitas cuaca utama berlangsung." },
+                { question: "Lapisan ozon (O3) yang berfungsi melindungi Bumi dari radiasi ultraviolet matahari terdapat pada lapisan...", options: ["Troposfer", "Stratosfer", "Mesosfer", "Ionosfer"], correctAnswer: 1, explanation: "Lapisan ozon terkonsentrasi di stratosfer dan berperan penting menyerap sebagian besar radiasi UV-B berbahaya dari matahari." },
+                { question: "Alat yang digunakan untuk mengukur suhu udara disebut...", options: ["Barometer", "Anemometer", "Higrometer", "Termometer"], correctAnswer: 3, explanation: "Termometer adalah alat standar untuk mengukur suhu atau temperatur udara." },
+                { question: "Angin bergerak dari daerah bertekanan udara ... ke daerah bertekanan udara ...", options: ["Rendah, Tinggi", "Tinggi, Rendah", "Sama, Sama", "Tinggi, Tinggi"], correctAnswer: 1, explanation: "Angin selalu bergerak dari wilayah dengan tekanan udara tinggi (antisiklon) menuju wilayah dengan tekanan udara rendah (siklon)." },
+                { question: "Menurut klasifikasi iklim Schmidt-Ferguson, suatu daerah dengan nilai Q = 25% termasuk tipe iklim...", options: ["A (Sangat Basah)", "B (Basah)", "C (Agak Basah)", "D (Sedang)"], correctAnswer: 1, explanation: "Nilai Q antara 14.3% - 33.3% menunjukkan tipe iklim B (Basah) menurut Schmidt-Ferguson. Q = 25% masuk dalam rentang ini." },
+                { question: "Indonesia yang terletak di sekitar garis khatulistiwa memiliki iklim matahari jenis...", options: ["Subtropis", "Sedang", "Dingin (Kutub)", "Tropis"], correctAnswer: 3, explanation: "Daerah yang berada di antara 0° – 23,5° LU/LS, seperti Indonesia, memiliki iklim tropis yang ditandai dengan suhu hangat dan curah hujan tinggi sepanjang tahun." },
+                { question: "Lapisan atmosfer yang berfungsi memantulkan gelombang radio sehingga bermanfaat untuk komunikasi jarak jauh adalah...", options: ["Troposfer", "Stratosfer", "Mesosfer", "Ionosfer (bagian dari Termosfer)"], correctAnswer: 3, explanation: "Lapisan Ionosfer, yang merupakan bagian dari Termosfer, mengandung partikel-partikel bermuatan (ion) yang dapat memantulkan gelombang radio kembali ke Bumi." },
+                { question: "Alat untuk mengukur jumlah curah hujan adalah...", options: ["Termometer", "Barometer", "Ombrometer/Pluviometer", "Anemometer"], correctAnswer: 2, explanation: "Ombrometer atau pluviometer adalah alat yang digunakan untuk menakar dan mengukur jumlah curah hujan yang jatuh di suatu area dalam periode tertentu." },
+                { question: "Fenomena aurora (cahaya kutub) terjadi di lapisan atmosfer...", options: ["Mesosfer", "Stratosfer", "Termosfer", "Troposfer"], correctAnswer: 2, explanation: "Aurora terjadi di Termosfer ketika partikel bermuatan dari angin matahari berinteraksi dengan atom-atom di atmosfer bagian atas." },
+                { question: "Kriteria bulan kering menurut Schmidt-Ferguson adalah jika curah hujan dalam sebulan...", options: ["< 60 mm", "> 100 mm", "60-100 mm", "< 100 mm"], correctAnswer: 0, explanation: "Dalam klasifikasi iklim Schmidt-Ferguson, bulan kering didefinisikan sebagai bulan dengan curah hujan kurang dari 60 mm." }
+            ],
+            hidrosfer: [
+                { question: "Proses penguapan air dari permukaan perairan seperti laut dan danau disebut...", options: ["Transpirasi", "Kondensasi", "Evaporasi", "Presipitasi"], correctAnswer: 2, explanation: "Evaporasi adalah perubahan wujud air dari cair menjadi gas (uap air) yang terjadi pada permukaan badan air akibat energi panas matahari." },
+                { question: "Perubahan uap air di atmosfer menjadi titik-titik air kecil atau kristal es yang membentuk awan disebut...", options: ["Evaporasi", "Kondensasi", "Infiltrasi", "Run-off"], correctAnswer: 1, explanation: "Kondensasi terjadi ketika uap air mendingin dan mencapai titik embun, sehingga berubah kembali menjadi bentuk cair atau padat (kristal es)." },
+                { question: "Jatuhnya segala bentuk air (cair atau padat) dari atmosfer ke permukaan Bumi disebut...", options: ["Adveksi", "Presipitasi", "Sublimasi", "Perkolasi"], correctAnswer: 1, explanation: "Presipitasi mencakup semua bentuk air yang jatuh dari awan, seperti hujan, salju, hujan es, dan gerimis." },
+                { question: "Proses meresapnya air dari permukaan tanah ke dalam lapisan tanah disebut...", options: ["Run-off", "Evapotranspirasi", "Infiltrasi", "Adveksi"], correctAnswer: 2, explanation: "Infiltrasi adalah kemampuan tanah untuk menyerap air hujan atau air permukaan ke dalam pori-porinya." },
+                { question: "Siklus air di mana air laut menguap, membentuk awan di atas laut, lalu hujan jatuh kembali ke laut disebut siklus...", options: ["Pendek", "Sedang", "Panjang", "Global"], correctAnswer: 0, explanation: "Siklus pendek terjadi seluruhnya di atas perairan (biasanya laut) tanpa melibatkan daratan secara signifikan." },
+                { question: "Penguapan air yang berasal dari jaringan tumbuhan, terutama melalui daun, disebut...", options: ["Evaporasi", "Sublimasi", "Transpirasi", "Kondensasi"], correctAnswer: 2, explanation: "Transpirasi adalah proses pelepasan uap air oleh tumbuhan ke atmosfer sebagai bagian dari metabolisme mereka." },
+                { question: "Pergerakan awan secara horizontal dari satu tempat ke tempat lain yang disebabkan oleh angin disebut...", options: ["Presipitasi", "Kondensasi", "Adveksi", "Infiltrasi"], correctAnswer: 2, explanation: "Adveksi adalah transportasi massa udara (termasuk awan dan uap air) secara horizontal oleh angin." },
+                { question: "Air yang mengalir di atas permukaan tanah, misalnya dalam bentuk aliran sungai, menuju ke tempat yang lebih rendah disebut...", options: ["Infiltrasi", "Perkolasi", "Run-off (Limpasan Permukaan)", "Akuifer"], correctAnswer: 2, explanation: "Run-off atau limpasan permukaan adalah bagian dari air hujan yang tidak meresap ke dalam tanah dan mengalir di atas permukaan." },
+                { question: "Gabungan dari proses evaporasi dan transpirasi disebut...", options: ["Kondensasi", "Sublimasi", "Evapotranspirasi", "Presipitasi"], correctAnswer: 2, explanation: "Evapotranspirasi adalah istilah yang digunakan untuk menggambarkan total kehilangan air dari permukaan tanah dan vegetasi ke atmosfer melalui penguapan dan transpirasi." },
+                { question: "Dalam siklus panjang, air yang jatuh sebagai salju di pegunungan tinggi dapat membentuk...", options: ["Sungai langsung", "Danau vulkanik", "Gletser", "Mata air artesis"], correctAnswer: 2, explanation: "Pada siklus panjang, salju yang terakumulasi di daerah dingin dan tinggi dapat memadat membentuk gletser, yang kemudian mencair dan menjadi sumber air bagi sungai." }
+            ]
+        };
+
+        let currentQuizType = '';
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let selectedOptionElement = null;
+
+        function showSection(sectionId,
+element) {
+            document.querySelectorAll('.content-section').forEach(section => section.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            element.classList.add('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function startQuiz(quizType) {
+            currentQuizType = quizType;
+            currentQuestionIndex = 0;
+            score = 0;
+            document.getElementById('quizModal').style.display = 'flex';
+            document.getElementById('quizTitle').textContent = `Kuis ${quizType.charAt(0).toUpperCase() + quizType.slice(1)}`;
+            document.getElementById('quizScore').textContent = '';
+            document.getElementById('closeQuiz').classList.remove('hidden');
+            document.getElementById('closeQuiz').textContent = 'Tutup Kuis'; // Reset button text
+            displayQuestion();
+        }
+
+        function displayQuestion() {
+            const quiz = quizData[currentQuizType];
+            if (currentQuestionIndex < quiz.length) {
+                const q = quiz[currentQuestionIndex];
+                document.getElementById('quizQuestion').textContent = `Pertanyaan ${currentQuestionIndex + 1} dari ${quiz.length}: ${q.question}`;
+                const optionsContainer = document.getElementById('quizOptions');
+                optionsContainer.innerHTML = '';
+                q.options.forEach((option, index) => {
+                    const label = document.createElement('label');
+                    label.className = 'quiz-option';
+                    label.innerHTML = `<input type="radio" name="quizOption" value="${index}" class="mr-2"> ${option}`;
+                    label.onclick = () => selectOption(label);
+                    optionsContainer.appendChild(label);
+                });
+                document.getElementById('quizFeedback').innerHTML = '';
+                document.getElementById('quizExplanation').classList.add('hidden');
+                document.getElementById('submitAnswer').classList.remove('hidden');
+                document.getElementById('nextQuestion').classList.add('hidden');
+                selectedOptionElement = null;
+            } else {
+                showFinalScore();
+            }
+        }
+        
+        function selectOption(labelElement) {
+            if (document.getElementById('submitAnswer').classList.contains('hidden')) return; 
+
+            const previouslySelected = document.querySelector('.quiz-option.selected');
+            if (previouslySelected) {
+                previouslySelected.classList.remove('selected');
+            }
+            labelElement.classList.add('selected');
+            selectedOptionElement = labelElement;
+        }
+
+
+        function submitAnswer() {
+            const quiz = quizData[currentQuizType];
+            const q = quiz[currentQuestionIndex];
+            const selectedRadio = document.querySelector('input[name="quizOption"]:checked');
+
+            if (!selectedRadio) {
+                // Menggunakan div styled sebagai pengganti alert
+                const feedbackDiv = document.getElementById('quizFeedback');
+                feedbackDiv.innerHTML = `<p class="feedback-incorrect" style="border-color: #F59E0B; background-color: #FFFBEB; color: #D97706;">Peringatan: Silakan pilih jawaban terlebih dahulu.</p>`;
+                return;
+            }
+
+            const userAnswerIndex = parseInt(selectedRadio.value);
+            const feedbackDiv = document.getElementById('quizFeedback');
+            const explanationDiv = document.getElementById('quizExplanation');
+
+            if (userAnswerIndex === q.correctAnswer) {
+                feedbackDiv.innerHTML = '<p class="feedback-correct">Benar!</p>';
+                score++;
+            } else {
+                feedbackDiv.innerHTML = `<p class="feedback-incorrect">Salah! Jawaban yang benar adalah: <strong>${q.options[q.correctAnswer]}</strong></p>`;
+            }
+            explanationDiv.innerHTML = `<p><strong>Pembahasan:</strong> ${q.explanation}</p>`;
+            explanationDiv.classList.remove('hidden');
+
+            document.getElementById('submitAnswer').classList.add('hidden');
+            document.getElementById('nextQuestion').classList.remove('hidden');
+            document.getElementById('quizScore').textContent = `Skor Sementara: ${score} / ${quiz.length}`;
+            
+            document.querySelectorAll('.quiz-option input[type="radio"]').forEach(radio => radio.disabled = true);
+            document.querySelectorAll('.quiz-option').forEach(opt => opt.onclick = null); 
+        }
+
+        function nextQuestion() {
+            currentQuestionIndex++;
+            document.querySelectorAll('.quiz-option input[type="radio"]').forEach(radio => radio.disabled = false);
+            displayQuestion();
+        }
+
+        function showFinalScore() {
+            const quiz = quizData[currentQuizType];
+            document.getElementById('quizQuestion').textContent = 'Kuis Selesai!';
+            document.getElementById('quizOptions').innerHTML = '';
+            document.getElementById('quizFeedback').innerHTML = '';
+            document.getElementById('quizExplanation').classList.add('hidden');
+            document.getElementById('submitAnswer').classList.add('hidden');
+            document.getElementById('nextQuestion').classList.add('hidden');
+            document.getElementById('quizScore').textContent = `Skor Akhir Anda: ${score} dari ${quiz.length} soal.`;
+            document.getElementById('closeQuiz').textContent = 'Selesai & Tutup';
+        }
+        
+        function closeQuizModal() {
+            document.getElementById('quizModal').style.display = 'none';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            showSection('litosfer', document.querySelector('.tab-button'));
+        });
+    </script>
+</body>
+</html>
